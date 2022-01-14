@@ -106,9 +106,6 @@
   (declare (ignore sub-char num-arg))
   `(localize ,(read input t t t)))
 
-(declaim
- (ftype (function (&optional character) (values t &optional)) set-syntax))
-
 (defmacro set-syntax (&optional (sub-char #\l))
   "Set dispatch macro character with SUB-CHAR for |#L-reader|. Continuable."
   (check-type sub-char character)
