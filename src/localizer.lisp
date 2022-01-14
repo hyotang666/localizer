@@ -133,7 +133,9 @@
        ,@(uiop:while-collecting (acc)
            (do-dict ((key value) *default-language*)
              (acc key)
-             (acc value))))))
+             (acc
+              (let ((*break-on-missing* (constantly value)))
+                (localize key))))))))
 
 (declaim
  (ftype (function (string) (values list &optional)) parse-accept-language))
