@@ -131,7 +131,7 @@
   (print
     `(defdict ,language
        ,@(uiop:while-collecting (acc)
-           (do-dict ((key value) (find-dictionary *default-language*))
+           (do-dict ((key value) *default-language*)
              (acc key)
              (acc value))))))
 
