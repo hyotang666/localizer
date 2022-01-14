@@ -16,7 +16,7 @@
            #:*key-predicate*
            ;;;; Helpers
            #:store-as-default
-           #:parse-accept-language
+           #:detect-accept-language
            #:delete-dictionary))
 
 (in-package :localizer)
@@ -181,3 +181,12 @@
                            table)
                     (nreverse acc)
                   acc nil)))))))
+
+(declaim
+ (ftype (function (string) (values keyword &optional)) detect-accept-language))
+
+(defun detect-accept-language (accept-language)
+  (loop :for lang-name :in (parse-accept-language accept-language)
+        :when (find-dictionary lang-name nil)
+          :return lang-name
+        :finally (return *default-language*)))
