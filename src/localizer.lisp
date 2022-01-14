@@ -72,6 +72,8 @@
        (store-dictionary ,language ,?dictionary)
        ,language)))
 
+(store-dictionary :en (make-dictionary))
+
 (defun pprint-defdict (stream exp)
   (funcall
     (formatter
