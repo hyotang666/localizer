@@ -75,7 +75,7 @@
   (assert (every #'keywordp language))
   (loop :for (key def) :on definition* :by #'cddr
         :do (check-type key (or symbol string))
-            (check-type def string))
+            (check-type def (or symbol string)))
   (let ((?dictionary (gensym "DICTIONARY")) (?lang (gensym "LANG")))
     `(let ((,?dictionary (make-dictionary)))
        (add-words ,?dictionary ,@definition*)
