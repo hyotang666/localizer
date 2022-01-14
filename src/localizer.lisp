@@ -68,16 +68,17 @@
   (values (gethash key dictionary)))
 
 (defmacro defdict (language &body definition*)
+  (setq language (uiop:ensure-list language))
   ;; trivial syntax check.
-  (check-type language keyword)
+  (assert (every #'keywordp language))
   (loop :for (key def) :on definition* :by #'cddr
         :do (check-type key (or symbol string))
             (check-type def string))
-  (let ((?dictionary (gensym "DICTIONARY")))
+  (let ((?dictionary (gensym "DICTIONARY")) (?lang (gensym "LANG")))
     `(let ((,?dictionary (make-dictionary)))
        (add-words ,?dictionary ,@definition*)
-       (store-dictionary ,language ,?dictionary)
-       ,language)))
+       (dolist (,?lang ',language) (store-dictionary ,?lang ,?dictionary))
+       ',language)))
 
 (store-dictionary :en (make-dictionary))
 
