@@ -109,17 +109,21 @@
 (declaim
  (ftype (function (&optional character) (values t &optional)) set-syntax))
 
-(defun set-syntax (&optional (sub-char #\l))
+(defmacro set-syntax (&optional (sub-char #\l))
   "Set dispatch macro character with SUB-CHAR for |#L-reader|. Continuable."
-  (let ((reader (get-dispatch-macro-character #\# sub-char)))
-    (if reader
-        (if (eq reader '|#L-reader|) ; It's me!
-            nil ; do nothing.
-            (progn
-             (cerror "Force to set." "#~C dispatch macro is already used. ~S"
-                     reader)
-             #0=(set-dispatch-macro-character #\# sub-char '|#L-reader|)))
-        #0#)))
+  (check-type sub-char character)
+  (let ((?reader (gensym "READER")))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (let ((,?reader (get-dispatch-macro-character #\# ',sub-char)))
+         (if ,?reader
+             (if (eq ,?reader '|#L-reader|) ; It's me!
+                 nil ; do nothing.
+                 (progn
+                  (cerror "Force to set."
+                          "#~C dispatch macro is already used. ~S" ,?reader)
+                  #0=(set-dispatch-macro-character #\# ',sub-char
+                                                   '|#L-reader|)))
+             #0#)))))
 
 (declaim (ftype (function (language) (values cons &optional)) template))
 
