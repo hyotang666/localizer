@@ -137,10 +137,10 @@
 
 (declaim (ftype (function (language) (values cons &optional)) template))
 
-(defun template (language)
+(defun template (*language*)
   "Print template for DEFDICT."
   (print
-    `(defdict ,language
+    `(defdict ,*language*
        ,@(uiop:while-collecting (acc)
            (do-dict ((key value) *default-language*)
              (acc key)
