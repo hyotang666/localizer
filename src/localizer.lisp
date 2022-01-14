@@ -11,8 +11,11 @@
            #:*default-language*
            #:*language*
            #:*beak-on-missing*
+           #:*key-predicate*
+           ;;;; Helpers
            #:store-as-default
-           #:parse-accept-language))
+           #:parse-accept-language
+           #:delete-dictionary))
 
 (in-package :localizer)
 
@@ -26,7 +29,11 @@
   (make-hash-table :test #'eq)
   "Repository of dictionaries as {keyword:hash-table}")
 
-(defun make-dictionary () (make-hash-table :test #'equal))
+(defparameter *key-predicate*
+  #'equalp
+  "To use dictionary key test. The default is equalp as case-insensitive.")
+
+(defun make-dictionary () (make-hash-table :test *key-predicate*))
 
 (declaim
  (ftype (function (language dictionary) (values dictionary &optional))
