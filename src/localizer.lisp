@@ -5,6 +5,8 @@
   (:export ;;;; Reader macro.
            #:set-syntax
            #:|#L-reader|
+	   ;;;; DSL
+	   #:defdict
            ;;;; Template.
            #:template
            ;;;; Configurations.
