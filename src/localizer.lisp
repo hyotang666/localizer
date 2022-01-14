@@ -66,8 +66,9 @@
 
 (defvar *language* :en "Current language.")
 
-(defun written-p (key &optional (dictionary (find-dictionary *language*)))
-  (values (gethash key dictionary)))
+(defun written-p (key &optional (dictionary (find-dictionary *language* nil)))
+  (when dictionary
+    (values (gethash key dictionary))))
 
 (defmacro defdict (language &body definition*)
   (setq language (uiop:ensure-list language))

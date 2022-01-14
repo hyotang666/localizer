@@ -2,7 +2,7 @@
 (in-package :asdf)
 (defsystem "localizer"
   :version
-  "2.0.2"
+  "2.0.3"
   :depends-on
   (
    "uiop"       ; Utilities, implicitly depends on via asdf.
