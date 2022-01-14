@@ -158,24 +158,25 @@
          (hash-keys (table)
            (loop :for key :being :each :hash-key :of table
                  :collect key :into keys
-                 :finally (return (sort keys #'>)))))
-    (loop :with table = (make-hash-table)
-          :for section :in (uiop:split-string accept-language :separator ",")
-          :for (language . quality)
-               = (uiop:split-string section :separator ";" :max 2)
-          :if quality
-            :do (setf (gethash
-                        (safe-read-from-string
-                          (let ((quality (car quality)))
-                            (declare (simple-string quality))
-                            (subseq quality
-                                    (1+
-                                      (or (position #\= quality)
-                                          (error "Missing #= for quality. ~S"
-                                                 accept-language))))))
-                        table)
-                        group)
-          :collect (safe-read-from-string language) :into group
-          :finally (return
-                    (loop :for key :in (hash-keys table)
-                          :nconc (gethash key table))))))
+                 :finally (return (sort keys #'>))))
+         (parse-quality (notation)
+           (subseq notation
+                   (1+
+                     (or (position #\= notation)
+                         (error "Missing = for quality. ~S"
+                                accept-language))))))
+    (let ((table (make-hash-table)) (acc nil))
+      (dolist
+          (section (uiop:split-string accept-language :separator ",")
+                   (loop :for key :in (hash-keys table)
+                         :append (gethash key table)))
+        (destructuring-bind
+            (language &optional quality)
+            (uiop:split-string section :separator ";" :max 2)
+          (declare (type (or null simple-string) quality))
+          (push (safe-read-from-string language) acc)
+          (when quality
+            (setf (gethash (safe-read-from-string (parse-quality quality))
+                           table)
+                    (nreverse acc)
+                  acc nil)))))))
