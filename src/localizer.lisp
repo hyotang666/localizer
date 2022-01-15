@@ -118,7 +118,7 @@
     (store-as-default target))
   whole)
 
-(declaim (ftype (function (t) (values string &optional)) localize))
+(declaim (ftype (function (t) (values t &optional)) localize))
 
 (defun localize (target)
   (or (written-p target)
