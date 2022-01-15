@@ -112,6 +112,11 @@
   'store-as-default
   "Function designator. This is called when word is missing in current dictionary.")
 
+(define-compiler-macro localize (&whole whole target &environment env)
+  (when (constantp target env)
+    (store-as-default target))
+  whole)
+
 (declaim (ftype (function (t) (values string &optional)) localize))
 
 (defun localize (target)
