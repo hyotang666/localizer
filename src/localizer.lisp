@@ -29,9 +29,15 @@
 
 (deftype dictionary () 'hash-table)
 
+;;;; localizer core.
+;;;; NOTE: Should be split as module?
+
 (defvar *dictionaries*
   (make-hash-table :test #'eq)
   "Repository of dictionaries as {keyword:hash-table}")
+
+;;;; ABSTRACT *DICTIONARIES*
+;; CREATE
 
 (defparameter *key-predicate*
   #'equalp
@@ -46,11 +52,23 @@
 (defun store-dictionary (language dictionary)
   (setf (gethash language *dictionaries*) dictionary))
 
-(defun delete-dictionary (language) (remhash language *dictionaries*))
+;; REFER
 
 (defun find-dictionary (language &optional (errorp t))
   (or (gethash language *dictionaries*)
       (and errorp (error "Missing dictionary for ~S." language))))
+
+;; UPDATE
+
+(defun add-words (dictionary &rest definition*)
+  (loop :for (key def) :on definition* :by #'cddr
+        :do (setf (gethash key dictionary) def)))
+
+;; DELETE
+
+(defun delete-dictionary (language) (remhash language *dictionaries*))
+
+;; ITERATE
 
 (defmacro do-dict
           (((key &optional definition) <language> &optional <return>)
@@ -62,15 +80,8 @@
          :do (tagbody ,@body)
          :finally (return ,<return>)))
 
-(defun add-words (dictionary &rest definition*)
-  (loop :for (key def) :on definition* :by #'cddr
-        :do (setf (gethash key dictionary) def)))
-
-(defvar *language* :en "Current language.")
-
-(defun written-p (key &optional (dictionary (find-dictionary *language* nil)))
-  (when dictionary
-    (values (gethash key dictionary))))
+;;;; localizer body.
+;;; DSL
 
 (defmacro defdict (language &body definition*)
   (setq language (uiop:ensure-list language))
@@ -102,6 +113,10 @@
 
 (set-pprint-dispatch '(cons (member defdict)) 'pprint-defdict)
 
+;;; CONFIGURATIONS
+
+(defvar *language* :en "Current language.")
+
 (defparameter *default-language* :en)
 
 (defun store-as-default (target)
@@ -112,6 +127,12 @@
 (defparameter *break-on-missing*
   'store-as-default
   "Function designator. This is called when word is missing in current dictionary.")
+
+;;; MAIN FEATURES
+
+(defun written-p (key &optional (dictionary (find-dictionary *language* nil)))
+  (when dictionary
+    (values (gethash key dictionary))))
 
 (define-compiler-macro localize (&whole whole target &environment env)
   (when (constantp target env)
@@ -124,25 +145,7 @@
   (or (written-p target)
       (funcall (coerce *break-on-missing* 'function) target)))
 
-(defun |#L-reader| (input sub-char num-arg)
-  (declare (ignore sub-char num-arg))
-  `(localize ,(read input t t t)))
-
-(defmacro set-syntax (&optional (sub-char #\l))
-  "Set dispatch macro character with SUB-CHAR for |#L-reader|. Continuable."
-  (check-type sub-char character)
-  (let ((?reader (gensym "READER")))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (let ((,?reader (get-dispatch-macro-character #\# ',sub-char)))
-         (if ,?reader
-             (if (eq ,?reader '|#L-reader|) ; It's me!
-                 nil ; do nothing.
-                 (progn
-                  (cerror "Force to set."
-                          "#~C dispatch macro is already used. ~S" ,?reader)
-                  #0=(set-dispatch-macro-character #\# ',sub-char
-                                                   '|#L-reader|)))
-             #0#)))))
+;;; TEMPLATE
 
 (declaim (ftype (function (language) (values cons &optional)) template))
 
@@ -156,6 +159,8 @@
              (acc
               (let ((*break-on-missing* (constantly value)))
                 (localize key))))))))
+
+;;; LACK-MIDDLEWARE
 
 (declaim
  (ftype (function (string) (values list &optional)) parse-accept-language))
@@ -212,3 +217,25 @@
            (detect-accept-language
              (gethash "accept-language" (getf env :headers)))))
       (funcall app env))))
+
+;;; READER
+
+(defun |#L-reader| (input sub-char num-arg)
+  (declare (ignore sub-char num-arg))
+  `(localize ,(read input t t t)))
+
+(defmacro set-syntax (&optional (sub-char #\l))
+  "Set dispatch macro character with SUB-CHAR for |#L-reader|. Continuable."
+  (check-type sub-char character)
+  (let ((?reader (gensym "READER")))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (let ((,?reader (get-dispatch-macro-character #\# ',sub-char)))
+         (if ,?reader
+             (if (eq ,?reader '|#L-reader|) ; It's me!
+                 nil ; do nothing.
+                 (progn
+                  (cerror "Force to set."
+                          "#~C dispatch macro is already used. ~S" ,?reader)
+                  #0=(set-dispatch-macro-character #\# ',sub-char
+                                                   '|#L-reader|)))
+             #0#)))))
