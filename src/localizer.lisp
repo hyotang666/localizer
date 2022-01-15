@@ -18,7 +18,8 @@
            ;;;; Helpers
            #:store-as-default
            #:detect-accept-language
-           #:delete-dictionary))
+           #:delete-dictionary
+           #:lack-middleware))
 
 (in-package :localizer)
 
@@ -198,3 +199,13 @@
         :when (find-dictionary lang-name nil)
           :return lang-name
         :finally (return *default-language*)))
+
+(declaim
+ (ftype (function (function) (values function &optional)) lack-middleware))
+
+(defun lack-middleware (app)
+  (lambda (env)
+    (let ((*language*
+           (detect-accept-language
+             (gethash "accept-language" (getf env :headers)))))
+      (funcall app env))))
