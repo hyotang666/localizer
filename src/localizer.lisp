@@ -5,8 +5,9 @@
   (:export ;;;; Reader macro.
            #:set-syntax
            #:|#L-reader|
-	   ;;;; DSL
-	   #:defdict
+           #:localize
+           ;;;; DSL
+           #:defdict
            ;;;; Template.
            #:template
            ;;;; Configurations.
@@ -110,6 +111,8 @@
 (defparameter *break-on-missing*
   'store-as-default
   "Function designator. This is called when word is missing in current dictionary.")
+
+(declaim (ftype (function (t) (values string &optional)) localize))
 
 (defun localize (target)
   (or (written-p target)
