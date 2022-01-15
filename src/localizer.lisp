@@ -162,34 +162,37 @@
 
 (defun parse-accept-language (accept-language)
   "Return list of LANGUAGEs that is sorted by great to less quality order."
-  (flet ((safe-read-from-string (string)
-           (let ((*read-eval* nil) (*package* (find-package :keyword)))
-             (read-from-string string)))
-         (hash-keys (table)
-           (loop :for key :being :each :hash-key :of table
-                 :collect key :into keys
-                 :finally (return (sort keys #'>))))
-         (parse-quality (notation)
-           (subseq notation
-                   (1+
-                     (or (position #\= notation)
-                         (error "Missing = for quality. ~S"
-                                accept-language))))))
-    (let ((table (make-hash-table)) (acc nil))
-      (dolist
-          (section (uiop:split-string accept-language :separator ",")
-                   (loop :for key :in (hash-keys table)
-                         :append (gethash key table)))
-        (destructuring-bind
-            (language &optional quality)
-            (uiop:split-string section :separator ";" :max 2)
-          (declare (type (or null simple-string) quality))
-          (push (safe-read-from-string language) acc)
-          (when quality
-            (setf (gethash (safe-read-from-string (parse-quality quality))
-                           table)
-                    (nreverse acc)
-                  acc nil)))))))
+  (let ((table (make-hash-table)))
+    (labels ((safe-read-from-string (string)
+               (let ((*read-eval* nil) (*package* (find-package :keyword)))
+                 (read-from-string string)))
+             (hash-keys (table)
+               (loop :for key :being :each :hash-key :of table
+                     :collect key :into keys
+                     :finally (return (sort keys #'>))))
+             (parse-quality (notation)
+               (subseq notation
+                       (1+
+                         (or (position #\= notation)
+                             (error "Missing = for quality. ~S"
+                                    accept-language)))))
+             (parse (temp section)
+               (destructuring-bind
+                   (language &optional quality)
+                   (uiop:split-string section :separator ";" :max 2)
+                 (declare (type (or null simple-string) quality))
+                 (setf language (safe-read-from-string language))
+                 (if quality
+                     (tagbody ; implicitly return nil.
+                       (setf (gethash
+                               (safe-read-from-string (parse-quality quality))
+                               table)
+                               (nreconc temp (list language))))
+                     (cons language temp)))))
+      (reduce #'parse (uiop:split-string accept-language :separator ",")
+              :initial-value nil)
+      (loop :for key :in (hash-keys table)
+            :nconc (gethash key table)))))
 
 (declaim
  (ftype (function (string) (values keyword &optional)) detect-accept-language))
