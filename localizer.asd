@@ -3,6 +3,11 @@
 (defsystem "localizer"
   :version
   "3.0.1"
+  :description "Localize your program text messages."
+  :author "SATO Shinichi"
+  :license "MIT"
+  :source-control (:git "git@github.com:hyotang666/localizer")
+  :bug-tracker "https://github.com/hyotang666/localizer/issues"
   :depends-on
   (
    "uiop"       ; Utilities, implicitly depends on via asdf.
