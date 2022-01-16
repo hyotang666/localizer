@@ -200,8 +200,16 @@ It parses accept-language header and detects supported language then binds `loca
 ### License
 
 ### Developed with
+* SBCL
 
 ### Tested with
+* SBCL/2.2.0
+* CCL/1.12.1
+* CLISP/2.49
+* ECL/21.2.1
+* allegro/10.1
+* abcl/1.8.0
+* cmucl/21D
 
 ## Installation
 
