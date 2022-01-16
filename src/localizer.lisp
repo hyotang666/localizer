@@ -139,9 +139,11 @@
     (store-as-default target))
   whole)
 
-(declaim (ftype (function (t) (values t &optional)) localize))
+(declaim (ftype (function ((or symbol string)) (values t &optional)) localize))
 
 (defun localize (target)
+  "Localize TARGET if current dictionary have its definition.
+  Otherwise call *BREAK-ON-MISSING*."
   (or (written-p target)
       (funcall (coerce *break-on-missing* 'function) target)))
 
