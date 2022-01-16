@@ -126,7 +126,7 @@
 
 (defun store-as-default (target)
   "Store TARGET as default-language. Intended to be bound by *break-on-missing*."
-  #+ccl
+  #+(or ccl clisp abcl allegro cmu)
   (check-type target (or symbol string))
   (add-words (find-dictionary *default-language*) target target)
   target)
@@ -153,7 +153,7 @@
 (defun localize (target)
   "Localize TARGET if current dictionary have its definition.
   Otherwise call *BREAK-ON-MISSING*."
-  #+ccl
+  #+(or ccl clisp abcl allegro cmu)
   (check-type target (or symbol string))
   (or (written-p target)
       (funcall (coerce *break-on-missing* 'function) target)))
@@ -164,6 +164,8 @@
 
 (defun template (*language*)
   "Print template for DEFDICT."
+  #+(or allegro clisp abcl)
+  (check-type *language* keyword)
   (print
     `(defdict ,*language*
        ,@(uiop:while-collecting (acc)

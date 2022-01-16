@@ -2,7 +2,7 @@
 (in-package :asdf)
 (defsystem "localizer.test"
   :version
-  "1.0.0"
+  "1.0.1"
   :depends-on
   (:jingoh "localizer")
   :components

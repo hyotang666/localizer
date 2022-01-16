@@ -22,6 +22,8 @@
 
 ; result := implementation dependent.
 #?(set-syntax) => implementation-dependent
+,:around (handler-bind ((error #'continue))
+	   (call-body)) ; allegro has.
 
 ;;;; Affected By:
 ; *READTABLE*
@@ -33,7 +35,8 @@
 ;;;; Side-Effects:
 ; Modify *READTABLE*.
 #?(not (eq (get-dispatch-macro-character #\# #\l)
-	   (progn (set-syntax)
+	   (progn (handler-bind ((error #'continue))
+		    (set-syntax))
 		  (get-dispatch-macro-character #\# #\l))))
 => T
 
@@ -93,9 +96,7 @@
 (requirements-about LOCALIZE :doc-type function
 		    :test equal
 		    :lazy t ; to skip compiler macro.
-		    :around
-		    (let ((*break-on-missing* #'identity))
-		      (call-body)))
+		    )
 
 ;;;; Description:
 
@@ -125,6 +126,8 @@
 
 ;;;; Side-Effects:
 ; If TARGET does not exists in current dictionary, TARGET is stored in default language dictioinary.
+#?(localize "foo") => "foo"
+,:test equal
 #?(localizer::find-dictionary :en)
 :satisfies (lambda (dict)
 	     (& (hash-table-p dict)
