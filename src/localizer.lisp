@@ -127,7 +127,7 @@
 (defun store-as-default (target)
   "Store TARGET as default-language. Intended to be bound by *break-on-missing*."
   #+(or ccl clisp abcl allegro cmu)
-  (check-type target (or symbol string))
+  (assert (typep target '(or symbol string)))
   (add-words (find-dictionary *default-language*) target target)
   target)
 
@@ -154,7 +154,7 @@
   "Localize TARGET if current dictionary have its definition.
   Otherwise call *BREAK-ON-MISSING*."
   #+(or ccl clisp abcl allegro cmu)
-  (check-type target (or symbol string))
+  (assert (typep target '(or symbol string)))
   (or (written-p target)
       (funcall (coerce *break-on-missing* 'function) target)))
 
