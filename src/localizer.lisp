@@ -86,6 +86,7 @@
 (defmacro defdict (language &body definition*)
   (setq language (uiop:ensure-list language))
   ;; trivial syntax check.
+  (check-type language (not null))
   (assert (every #'keywordp language))
   (loop :for (key def) :on definition* :by #'cddr
         :do (check-type key (or symbol string))
