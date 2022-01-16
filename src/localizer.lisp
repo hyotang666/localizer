@@ -120,6 +120,10 @@
 
 (defparameter *default-language* :en)
 
+(declaim
+ (ftype (function ((or symbol string)) (values (or symbol string) &optional))
+        store-as-default))
+
 (defun store-as-default (target)
   "Store TARGET as default-language. Intended to be bound by *break-on-missing*."
   (add-words (find-dictionary *default-language*) target target)
