@@ -13,7 +13,7 @@
            ;;;; Configurations.
            #:*default-language*
            #:*language*
-           #:*beak-on-missing*
+           #:*break-on-missing*
            #:*key-predicate*
            ;;;; Helpers
            #:store-as-default
