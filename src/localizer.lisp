@@ -137,7 +137,9 @@
 
 (define-compiler-macro localize (&whole whole target &environment env)
   (when (constantp target env)
-    (store-as-default (eval target)))
+    (let ((target (eval target)))
+      (check-type target (or symbol string))
+      (store-as-default target)))
   whole)
 
 (declaim (ftype (function ((or symbol string)) (values t &optional)) localize))

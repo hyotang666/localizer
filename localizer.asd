@@ -2,7 +2,7 @@
 (in-package :asdf)
 (defsystem "localizer"
   :version
-  "5.0.7"
+  "5.0.8"
   :description "Localize your program text messages."
   :author "SATO Shinichi"
   :license "MIT"
