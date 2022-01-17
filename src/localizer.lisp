@@ -1,134 +1,52 @@
 (in-package :cl-user)
 
-(defpackage :localizer
-  (:use :cl)
-  (:export ;;;; Reader macro.
-           #:set-syntax
-           #:|#L-reader|
-           #:localize
-           ;;;; DSL
-           #:defdict
-           ;;;; Template.
-           #:template
-           ;;;; Configurations.
-           #:*default-language*
-           #:*language*
-           #:*break-on-missing*
-           #:*key-predicate*
-           ;;;; Helpers
-           #:store-as-default
-           #:detect-accept-language
-           #:delete-dictionary
-           #:lack-middleware))
+#.(flet ((reexport (symbols)
+           `((:import-from :localizer.core ,@symbols) (:export ,@symbols))))
+    `(defpackage :localizer
+       (:use :cl)
+       ,@(reexport '(#:defdict #:*key-predicate*))
+       (:export ;;;; Reader macro.
+                #:set-syntax
+                #:|#L-reader|
+                #:localize
+                ;;;; DSL
+                #:defdict
+                ;;;; Template.
+                #:template
+                ;;;; Configurations.
+                #:*default-language*
+                #:*language*
+                #:*break-on-missing*
+                ;;;; Helpers
+                #:store-as-default
+                #:lack-middleware)))
 
 (in-package :localizer)
 
 (declaim (optimize speed))
 
-(deftype language () 'keyword)
-
-(deftype dictionary () 'hash-table)
-
-;;;; localizer core.
-;;;; NOTE: Should be split as module?
-
-(defvar *dictionaries*
-  (make-hash-table :test #'eq)
-  "Repository of dictionaries as {keyword:hash-table}")
-
-;;;; ABSTRACT *DICTIONARIES*
-;; CREATE
-
-(defparameter *key-predicate*
-  #'equalp
-  "To use dictionary key test. The default is equalp as case-insensitive.")
-
-(defun make-dictionary () (make-hash-table :test *key-predicate*))
-
-(declaim
- (ftype (function (language dictionary) (values dictionary &optional))
-        store-dictionary))
-
-(defun store-dictionary (language dictionary)
-  (setf (gethash language *dictionaries*) dictionary))
-
-;; REFER
-
-(defun find-dictionary (language &optional (errorp t))
-  (or (gethash language *dictionaries*)
-      (and errorp (error "Missing dictionary for ~S." language))))
-
-;; UPDATE
-
-(defun add-words (dictionary &rest definition*)
-  (loop :for (key def) :on definition* :by #'cddr
-        :do (setf (gethash key dictionary) def)))
-
-;; DELETE
-
-(defun delete-dictionary (language) (remhash language *dictionaries*))
-
-;; ITERATE
-
-(defmacro do-dict
-          (((key &optional definition) <language> &optional <return>)
-           &body body)
-  `(loop :for ,key :being :each :hash-key :of
-              (find-dictionary ,<language>) ,@(and definition
-                                                   `(:using
-                                                     (:hash-value ,definition)))
-         :do (tagbody ,@body)
-         :finally (return ,<return>)))
-
-;;;; localizer body.
-;;; DSL
-
-(defmacro defdict (language &body definition*)
-  (setq language (uiop:ensure-list language))
-  ;; trivial syntax check.
-  (check-type language (not null))
-  (assert (every #'keywordp language))
-  (loop :for (key def) :on definition* :by #'cddr
-        :do (check-type key (or symbol string))
-            (check-type def (or symbol string)))
-  (let ((?dictionary (gensym "DICTIONARY")) (?lang (gensym "LANG")))
-    `(let ((,?dictionary (make-dictionary)))
-       (add-words ,?dictionary ,@definition*)
-       (dolist (,?lang ',language) (store-dictionary ,?lang ,?dictionary))
-       ',language)))
-
-(store-dictionary :en (make-dictionary))
-
-(defun pprint-defdict (stream exp)
-  (funcall
-    (formatter
-     #.(concatenate 'string "~:<" ; pprint-logical-block.
-                    "~W~^ ~:_" ; operator.
-                    "~W~^~1I ~_" ; language.
-                    "~@{" ; definitions.
-                    "~W~^ ~:_" ; key
-                    "~W~^ ~_" ; def
-                    "~}" ; end of definitions.
-                    "~:>"))
-    stream exp))
-
-(set-pprint-dispatch '(cons (member defdict)) 'pprint-defdict)
-
 ;;; CONFIGURATIONS
 
-(defvar *language* :en "Current language.")
+(defdict :en)
+
+(declaim (type localizer.core:language *language*))
+
+(defvar *language* (localizer.core:find-language :en) "Current language.")
 
 (defparameter *default-language* :en)
 
 (declaim
- (ftype (function ((or symbol string)) (values (or symbol string) &optional))
+ (ftype (function (localizer.core:text-designator)
+         (values localizer.core:text-designator &optional))
         store-as-default))
 
 (defun store-as-default (target)
   "Store TARGET as default-language. Intended to be bound by *break-on-missing*."
   #+(or ccl clisp abcl allegro cmu)
-  (assert (typep target '(or symbol string)))
-  (add-words (find-dictionary *default-language*) target target)
+  (assert (typep target 'localizer.core:text-designator))
+  (localizer.core:add-translation target target
+                                  (localizer.core:language-dictionary
+                                    *default-language*))
   target)
 
 (defparameter *break-on-missing*
@@ -137,39 +55,52 @@
 
 ;;; MAIN FEATURES
 
-(defun written-p (key &optional (dictionary (find-dictionary *language* nil)))
-  (when dictionary
-    (values (gethash key dictionary))))
+(defun written-p (key)
+  (localizer.core:find-translated key
+                                  (localizer.core:language-dictionary
+                                    *language*)))
 
 (define-compiler-macro localize (&whole whole target &environment env)
   (when (constantp target env)
     (let ((target (eval target)))
-      (check-type target (or symbol string))
+      (check-type target localizer.core:text-designator)
       (store-as-default target)))
   whole)
 
-(declaim (ftype (function ((or symbol string)) (values t &optional)) localize))
+(declaim
+ (ftype (function (localizer.core:text-designator) (values t &optional))
+        localize))
 
 (defun localize (target)
   "Localize TARGET if current dictionary have its definition.
   Otherwise call *BREAK-ON-MISSING*."
   #+(or ccl clisp abcl allegro cmu)
-  (assert (typep target '(or symbol string)))
+  (assert (typep target 'localizer.core:text-designator))
   (or (written-p target)
       (funcall (coerce *break-on-missing* 'function) target)))
 
 ;;; TEMPLATE
 
-(declaim (ftype (function (language) (values cons &optional)) template))
+(declaim
+ (ftype (function (localizer.core:lang-name &rest localizer.core:lang-name)
+         (values cons &optional))
+        template))
 
-(defun template (*language*)
+(defun template (lang-name &rest aliases)
   "Print template for DEFDICT."
   #+(or allegro clisp abcl)
-  (check-type *language* keyword)
+  (check-type lang-name keyword)
+  (assert (every (lambda (name) (typep name 'localizer.core:lang-name))
+                 aliases))
   (print
-    `(defdict ,*language*
+    `(defdict
+       ,(if aliases
+            `(,lang-name (:aliases ,aliases))
+            lang-name)
        ,@(uiop:while-collecting (acc)
-           (do-dict ((key value) *default-language*)
+           (localizer.core:do-dict ((key value)
+                                    (localizer.core:language-dictionary
+                                      *default-language*))
              (acc key)
              (acc
               (let ((*break-on-missing* (constantly value)))
@@ -215,13 +146,14 @@
             :nconc (gethash key table)))))
 
 (declaim
- (ftype (function (string) (values keyword &optional)) detect-accept-language))
+ (ftype (function (string) (values localizer.core:language &optional))
+        detect-accept-language))
 
 (defun detect-accept-language (accept-language)
   (loop :for lang-name :in (parse-accept-language accept-language)
-        :when (find-dictionary lang-name nil)
-          :return lang-name
-        :finally (return *default-language*)))
+        :when (localizer.core:find-language lang-name nil)
+          :return :it
+        :finally (return (localizer.core:find-language *default-language*))))
 
 (declaim
  (ftype (function (function) (values function &optional)) lack-middleware))

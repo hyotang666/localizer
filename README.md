@@ -1,4 +1,4 @@
-# LOCALIZER 0.0.0
+# LOCALIZER 6.0.0
 ## What is this?
 The system to localize your program text messages.
 
@@ -83,7 +83,7 @@ Finally, you can run your code with language switching via the special variable 
 Hello SATO!
 NIL
 
-(let ((localizer:*language* :ja))
+(let ((localizer:*language* (localizer:find-language :ja)))
   (hello 'sato))
 おはようございますSATOさん。
 NIL
@@ -126,7 +126,7 @@ After that, you can use reader macro instead of wrapping the text.
 
 Reader macro is useful especially for minimizing the edit.
 
-### *NOTE!*
+### **NOTE!**
 
 Unlike standard common-lisp reader macros, `localizer:|#L-reader|` generates the form, not an object.
 So reader macro does not work expectedly in literal object form.
@@ -156,11 +156,11 @@ This is useful and efficient if one of the words will be chosen.
 Later case above translates three words and allocates vector in every call
 but the first case translates one word and no vector allocation occurs in the run time.
 
-You may notice the sentence about 'argument is a literal *object*'.
+You may notice the sentence about '*argument is a literal* ***object***'.
 Yes, in fact, `STRING` or `SYMBOL` is able to be the key.
 This is useful when the text message is too much longer, or to avoid key conflict.
 
-You may also notice the sentence about 'collecting the default text messages *in the compile-time*'.
+You may also notice the sentence about '*collecting the default text messages* ***in the compile-time***'.
 Yes, in fact, collecting may occur in run time too. (The default.)
 If the word that does not exist in the dictionary of the current language comes,
 localizer `cl:funcall`s the function designator in the special variable `localizer:*break-on-missing*` with such a word.
@@ -180,9 +180,16 @@ In such cases, you can do it like below.
 ## `localizer:defdict`
 The macro `localizer:defdict` defines a dictionary for a new language.
 
-The first argument is a keyword symbol to name a new language.
+The first argument is a name spec.
 
 Rest arguments are key-value pairs.
+
+```lisp
+(localizer:defdict :ja "hello" "こんにちは")
+
+(localizer:defdict (:ja (:aliases :ja_jp :ja_jp_jp))
+  "hello" "こんにちは")
+```
 
 ## `localizer:lack-middleware`
 Localizer provides [lack] middleware `localizer:lack-middleware`.
@@ -208,8 +215,12 @@ It parses accept-language header and detects supported language then binds `loca
 * CLISP/2.49
 * ECL/21.2.1
 * allegro/10.1
-* abcl/1.8.0
+* abcl/1.8.0 ; Fails, see below.
 * cmucl/21D
+
+#### [ABCL issue].
+One test about `localizer:template` fails due to the [ABCL issue] but fortunately, the issue is already fixed.
+Please wait next abcl release or compile abcl from the source.
 
 ## Installation
 
@@ -227,3 +238,4 @@ It parses accept-language header and detects supported language then binds `loca
 [gnu gettext]:https://www.gnu.org/software/gettext/
 [named-readtables]:https://github.com/melisgl/named-readtables
 [lack]:https://github.com/fukamachi/lack
+[ABCL issue]:https://github.com/armedbear/abcl/issues/408

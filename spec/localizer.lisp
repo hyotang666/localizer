@@ -44,55 +44,6 @@
 
 ;;;; Exceptional-Situations:
 
-(requirements-about DEFDICT :doc-type function)
-
-;;;; Description:
-
-#+syntax (DEFDICT LANGUAGE &BODY DEFINITION*) ; => result
-
-;;;; Arguments and Values:
-
-; language := [ lang-name | ( lang-name+ ) ]
-; lang-name := keyword
-; otherwise signals error.
-#?(defdict "not keyword") :signals error
-,:lazy t
-#?(defdict ()) :signals error
-,:lazy t
-#?(defdict ("not keyword")) :signals error
-,:lazy t
-
-; definition* := { key def }*
-; key := [ symbol | string ], otherwise signals error.
-#?(defdict :en (not keyword or string) "dummy") :signals error
-
-; def := [ symbol | string ], otherwise signals error.
-#?(defdict :en "dummy" (not keyword or string)) :signals error
-
-; result := list of LANGUAGE.
-
-#?(defdict :en) => (:en)
-,:test equal
-
-;;;; Affected By:
-; none
-
-;;;; Side-Effects:
-; localizer::*DICTIONARIES*
-#?(values (localizer::find-dictionary :ja nil)
-	  (defdict :ja)
-	  (localizer::find-dictionary :ja))
-:multiple-value-satisfies (lambda (a b c)
-			    (& (null a)
-			       (equal b '(:JA))
-			       (hash-table-p c)))
-,:around (let ((localizer::*dictionaries* (make-hash-table)))
-	   (call-body))
-
-;;;; Notes:
-
-;;;; Exceptional-Situations:
-
 (requirements-about LOCALIZE :doc-type function
 		    :test equal
 		    :lazy t ; to skip compiler macro.
@@ -111,9 +62,9 @@
 
 ;;;; Affected By:
 ; *LANGUAGE*
-#?(defdict :test "foo" "bar") => (:TEST)
+#?(defdict :test "foo" "bar") => :TEST
 ; If TARGET exists in current language dictionary, such definition is returned.
-#?(let ((*language* :test))
+#?(let ((*language* (localizer.core:find-language :test)))
     (localize "foo"))
 => "bar"
 
@@ -128,11 +79,10 @@
 ; If TARGET does not exists in current dictionary, TARGET is stored in default language dictioinary.
 #?(localize "foo") => "foo"
 ,:test equal
-#?(localizer::find-dictionary :en)
+#?(localizer.core:language-dictionary :en)
 :satisfies (lambda (dict)
-	     (& (hash-table-p dict)
-		(eql 1 (hash-table-count dict))
-		(equal "foo" (gethash "foo" dict))))
+	     (& (typep dict 'localizer.core::dictionary)
+		(equal "foo" (localizer.core:find-translated "foo" dict))))
 
 ;;;; Notes:
 ; LOCALIZE has compier-macro.
@@ -149,12 +99,15 @@
 :outputs "
 (DEFDICT :NEW \"foo\" \"foo\") "
 
-#+syntax (TEMPLATE *LANGUAGE*) ; => result
+#+syntax (TEMPLATE name &rest aliases) ; => result
 
 ;;;; Arguments and Values:
 
 ; *language* := keyword, otherwise implementation dependent condition.
 #?(template "not keyword") :signals condition
+
+; alias := keyword, otherwise implementation dependent condition.
+#?(template :ja "not keyword") :signals condition
 
 ; result := cons
 #?(template :new)
@@ -192,26 +145,12 @@
 ; Current language.
 
 ;;;; Value type is KEYWORD
-#? *LANGUAGE* :be-the keyword
+#? *LANGUAGE* :be-the localizer.core:language
 
 ; Initial value is `:EN`
 
 ;;;; Affected By:
 ; none.
-
-;;;; Notes:
-
-(requirements-about *KEY-PREDICATE* :doc-type variable)
-
-;;;; Description:
-; To use dictionary key test. The default is equalp as case-insensitive.
-
-;;;; Value type is COMPILED-FUNCTION
-#? *KEY-PREDICATE* :be-the (or symbol function)
-
-; Initial value is `#<FUNCTION EQUALP>`
-
-;;;; Affected By:
 
 ;;;; Notes:
 
@@ -234,31 +173,6 @@
 
 ;;;; Side-Effects:
 ; Current language dictionary is modified.
-
-;;;; Notes:
-
-;;;; Exceptional-Situations:
-
-(requirements-about DELETE-DICTIONARY :doc-type function)
-
-;;;; Description:
-
-#+syntax (DELETE-DICTIONARY LANGUAGE) ; => result
-
-;;;; Arguments and Values:
-
-; language := keyword.
-
-; result := boolean.
-; Return T if actualy removed, otherwise NIL.
-#?(delete-dictionary :test) => T
-#?(delete-dictionary :test) => NIL
-
-;;;; Affected By:
-; localizer::*dictionaries*
-
-;;;; Side-Effects:
-; Modify localizer::*dictionaries*
 
 ;;;; Notes:
 
