@@ -32,18 +32,22 @@
   #'equalp
   "To use dictionary key test. The default is equalp as case-insensitive.")
 
-;;; CREATE
-
-(defun make-dictionary () (make-hash-table :test *key-predicate*))
-
-;;; REFER
-
-(defun find-translated (origin dictionary) (values (gethash origin dictionary)))
-
 ;;; UPDATE
 
 (defun add-translation (origin translated dictionary)
   (setf (gethash origin dictionary) translated))
+
+;;; CREATE
+
+(defun make-dictionary (&rest translations)
+  (loop :with dict = (make-hash-table :test *key-predicate*)
+        :for (origin translated) :on translations :by #'cddr
+        :do (add-translation origin translated dict)
+        :finally (return dict)))
+
+;;; REFER
+
+(defun find-translated (origin dictionary) (values (gethash origin dictionary)))
 
 ;;; DELETE
 
@@ -87,13 +91,9 @@
 ;;; CREATE
 
 (defun make-language (&key name aliases translations)
-  (loop :with dict = (make-dictionary)
-        :for (origin translated) :on translations :by #'cddr
-        :do (add-translation origin translated dict)
-        :finally (return
-                  (%make-language :name name
-                                  :aliases aliases
-                                  :dictionary dict))))
+  (%make-language :name name
+                  :aliases aliases
+                  :dictionary (apply #'make-dictionary translations)))
 
 (defun store-language (language)
   (setf (gethash (language-name language) *languages*) language))
