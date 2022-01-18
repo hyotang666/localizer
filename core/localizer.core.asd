@@ -3,6 +3,11 @@
 (defsystem "localizer.core"
   :version
   "1.0.1"
+  :author "SATO Shinichi"
+  :description "Core module for localizer."
+  :source-control (:git "git@github.com:hyotang666/localizer")
+  :bug-tracker "https://github.com/hyotang666/localizer/issues"
+  :license "MIT"
   :depends-on
   (
    "uiop"       ; Utilities, implicitly depends on via asdf.
