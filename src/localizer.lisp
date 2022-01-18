@@ -92,19 +92,20 @@
   (check-type lang-name keyword)
   (assert (every (lambda (name) (typep name 'localizer.core:lang-name))
                  aliases))
-  (print
-    `(defdict
-       ,(if aliases
-            `(,lang-name (:aliases ,aliases))
-            lang-name)
-       ,@(uiop:while-collecting (acc)
-           (localizer.core:do-dict ((key value)
-                                    (localizer.core:language-dictionary
-                                      *default-language*))
-             (acc key)
-             (acc
-              (let ((*break-on-missing* (constantly value)))
-                (localize key))))))))
+  (let ((*package* (find-package :cl-user)))
+    (print
+      `(defdict
+         ,(if aliases
+              `(,lang-name (:aliases ,aliases))
+              lang-name)
+         ,@(uiop:while-collecting (acc)
+             (localizer.core:do-dict ((key value)
+                                      (localizer.core:language-dictionary
+                                        *default-language*))
+               (acc key)
+               (acc
+                (let ((*break-on-missing* (constantly value)))
+                  (localize key)))))))))
 
 ;;; LACK-MIDDLEWARE
 
