@@ -115,10 +115,7 @@
 (defun parse-accept-language (accept-language)
   "Return list of LANGUAGEs that is sorted by great to less quality order."
   (let ((table (make-hash-table)))
-    (labels ((safe-read-from-string (string)
-               (let ((*read-eval* nil) (*package* (find-package :keyword)))
-                 (read-from-string string)))
-             (hash-keys (table)
+    (labels ((hash-keys (table)
                (loop :for key :being :each :hash-key :of table
                      :collect key :into keys
                      :finally (return (sort keys #'>))))
@@ -133,11 +130,15 @@
                    (language &optional quality)
                    (uiop:split-string section :separator ";" :max 2)
                  (declare (type (or null simple-string) quality))
-                 (setf language (safe-read-from-string language))
+                 (setf language
+                         (uiop:safe-read-from-string language
+                                                     :package :keyword))
                  (if quality
                      (tagbody ; implicitly return nil.
                        (setf (gethash
-                               (safe-read-from-string (parse-quality quality))
+                               (uiop:safe-read-from-string
+                                 (parse-quality quality)
+                                 :package :keyword)
                                table)
                                (nreconc temp (list language))))
                      (cons language temp)))))
