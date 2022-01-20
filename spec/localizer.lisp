@@ -97,7 +97,7 @@
 ; Print template for DEFDICT.
 #?(template :new)
 :outputs "
-(DEFDICT :NEW \"foo\" \"foo\") "
+(LOCALIZER.CORE:DEFDICT :NEW \"foo\" \"foo\") "
 
 #+syntax (TEMPLATE name &rest aliases) ; => result
 
