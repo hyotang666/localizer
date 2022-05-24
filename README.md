@@ -215,12 +215,8 @@ It parses accept-language header and detects supported language then binds `loca
 * CLISP/2.49
 * ECL/21.2.1
 * allegro/10.1
-* abcl/1.8.0 ; Fails, see below.
+* abcl/1.9.0
 * cmucl/21D
-
-#### [ABCL issue].
-One test about `localizer:template` fails due to the [ABCL issue] but fortunately, the issue is already fixed.
-Please wait next abcl release or compile abcl from the source.
 
 ## Installation
 
@@ -238,4 +234,3 @@ Please wait next abcl release or compile abcl from the source.
 [gnu gettext]:https://www.gnu.org/software/gettext/
 [named-readtables]:https://github.com/melisgl/named-readtables
 [lack]:https://github.com/fukamachi/lack
-[ABCL issue]:https://github.com/armedbear/abcl/issues/408
